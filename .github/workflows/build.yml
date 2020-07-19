@@ -1,0 +1,138 @@
+name: GitHub CI
+
+on:
+  push:
+    branches:
+      - magnify
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          set -x -e
+          git log --pretty -1
+          python3 --version
+          sudo python3 -m pip install -U black
+          find . -name \*.py | xargs python3 -m black
+          echo "Check for failed lint: "
+          git status --untracked-files=no --porcelain
+          [ -z "$(git status --untracked-files=no --porcelain)" ] || exit 1
+
+  macos:
+    name: macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          set -x -e
+          echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
+          export PATH=/usr/bin:$PATH
+          echo $PATH
+          echo "Note the following is to fix a bug in Apple's python 3.7.3"
+          sudo sed -i.bak 's/sys.modules.values()/list(sys.modules.values())/g' /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.7/lib/python3.7/linecache.py
+          python3 --version
+          python3 -m pip --version
+          python3 -m pip freeze
+          python3 -c 'import site; print(site.getsitepackages())'
+      - run: |
+          set -x -e
+          export PATH=/usr/bin:$PATH
+          python3 --version
+          sudo python3 -m pip install -U pytest
+          python3 -m pytest -s -v tests/test_*.py
+      - run: |
+          set -x -e
+          export PATH=/usr/bin:$PATH
+          python3 --version
+          python3 setup.py bdist_wheel
+      - run: |
+          set -x -e
+          export PATH=/usr/bin:$PATH
+          python3 --version
+          rm -rf magnify && ls -la dist
+          (cd dist && ls *.whl | xargs sudo python3 -m pip install)
+      - run: |
+          set -x -e
+          export PATH=/usr/bin:$PATH
+          python3 --version
+          (cd tests && python3 -m pytest -s -v test_*.py)
+
+  ubuntu:
+    name: Ubuntu
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          set -x -e
+          bazel version
+          python3 --version
+          python3 -m pip --version
+          python3 -m pip freeze
+          python3 -c 'import site; print(site.getsitepackages())'
+      - run: |
+          set -x -e
+          python3 --version
+          sudo python3 -m pip install -U pytest
+          python3 -m pytest -s -v tests/test_*.py
+      - run: |
+          set -x -e
+          python3 --version
+          sudo python3 -m pip install setuptools wheel
+          python3 setup.py bdist_wheel
+      - run: |
+          set -x -e
+          python3 --version
+          rm -rf magnify && ls -la dist
+          (cd dist && ls *.whl | xargs sudo python3 -m pip install)
+      - run: |
+          set -x -e
+          python3 --version
+          (cd tests && python3 -m pytest -s -v test_*.py)
+
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.8.3
+      - env:
+          PYTHON_VERSION: 3.8.3
+        shell: cmd
+        run: |
+          @echo on
+          cp /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python3
+          python3 --version
+          python3 -m pip --version
+          python3 -m pip freeze
+          python3 -c "import site; print(site.getsitepackages())"
+      - shell: bash
+        run: |
+          set -x -e
+          python3 --version
+          python3 -m pip install -U pytest
+          python3 -m pytest -s -v tests/test_*.py
+      - shell: bash
+        run: |
+          set -x -e
+          python3 --version
+          python3 -m pip install setuptools wheel
+          python3 setup.py bdist_wheel
+      - shell: bash
+        run: |
+          set -x -e
+          python3 --version
+          rm -rf magnify && ls -la dist
+          (cd dist && ls *.whl | xargs python3 -m pip install)
+      - shell: bash
+        run: |
+          set -x -e
+          python3 --version
+          (cd tests && python3 -m pytest -s -v test_*.py)
