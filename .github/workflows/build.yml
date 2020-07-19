@@ -18,8 +18,9 @@ jobs:
           set -x -e
           git log --pretty -1
           python3 --version
-          sudo python3 -m pip install -U black
-          find . -name \*.py | xargs python3 -m black
+          sudo python3 -m pip install -U black pyupgrade
+          find . -name '*.py' | xargs python3 -m black
+          find . -name '*.py' | xargs python3 -m pyupgrade --py3-only
           echo "Check for failed lint: "
           git status --untracked-files=no --porcelain
           [ -z "$(git status --untracked-files=no --porcelain)" ] || exit 1
@@ -44,7 +45,12 @@ jobs:
           set -x -e
           export PATH=/usr/bin:$PATH
           python3 --version
-          sudo python3 -m pip install -U pytest
+          sudo python3 -m pip install -U tensorflow
+      - run: |
+          set -x -e
+          export PATH=/usr/bin:$PATH
+          python3 --version
+          sudo python3 -m pip install -U pytest scikit-image
           python3 -m pytest -s -v tests/test_*.py
       - run: |
           set -x -e
@@ -78,7 +84,11 @@ jobs:
       - run: |
           set -x -e
           python3 --version
-          sudo python3 -m pip install -U pytest
+          sudo python3 -m pip install -U tensorflow
+      - run: |
+          set -x -e
+          python3 --version
+          sudo python3 -m pip install -U pytest scikit-image
           python3 -m pytest -s -v tests/test_*.py
       - run: |
           set -x -e
@@ -117,7 +127,12 @@ jobs:
         run: |
           set -x -e
           python3 --version
-          python3 -m pip install -U pytest
+          python3 -m pip install -U tensorflow
+      - shell: bash
+        run: |
+          set -x -e
+          python3 --version
+          python3 -m pip install -U pytest scikit-image
           python3 -m pytest -s -v tests/test_*.py
       - shell: bash
         run: |

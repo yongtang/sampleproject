@@ -12,12 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""test_magnify"""
+"""magnify.color"""
 
-import magnify
-
-
-def test_magnify():
-    """test_magnify"""
-
-    assert True
+from magnify.core.python.ops.color_ops import Grayscale

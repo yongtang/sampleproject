@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""magnify"""
+"""magnify.image"""
 
-from magnify.core.python.api import image
-from magnify.core.python.api import color
-
-from magnify.core.python.api.image import Image
+from magnify.core.python.ops.image_ops import Image

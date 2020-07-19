@@ -37,6 +37,7 @@ setuptools.setup(
     version=version,
     packages=setuptools.find_packages(where=".", exclude=["tests"]),
     python_requires=">=3.6, <3.9",
+    install_requires=["tensorflow"],
     zip_safe=False,
     distclass=BinaryDistribution,
 )

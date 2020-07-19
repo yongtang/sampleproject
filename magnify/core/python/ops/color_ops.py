@@ -12,9 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""magnify"""
+"""magnify.color"""
 
-from magnify.core.python.api import image
-from magnify.core.python.api import color
+import tensorflow as tf
 
-from magnify.core.python.api.image import Image
+
+class Grayscale:
+    def __call__(self, input):
+        value = tf.image.convert_image_dtype(input, tf.float32)
+        coeff = [0.2125, 0.7154, 0.0721]
+        value = tf.tensordot(value, coeff, (-1, -1))
+        value = tf.expand_dims(value, -1)
+        return tf.image.convert_image_dtype(value, input.dtype)
