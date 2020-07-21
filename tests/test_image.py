@@ -16,9 +16,8 @@
 
 import os
 
+import magnify
 import numpy as np
-import magnify as mf
-
 import tensorflow as tf
 
 
@@ -32,11 +31,14 @@ def test_image():
     )
     expected = tf.image.decode_gif(tf.io.read_file(path))
     expected = tf.concat([expected, expected], axis=0)
+    expected = tf.image.convert_image_dtype(expected, tf.float32)
 
     def fn(image):
-        image = mf.Image(dtype=np.float32)(image)
-        image = mf.Image(dtype=np.uint8)(image)
-        return image
+        return (
+            magnify.Functional()
+            .apply(magnify.Image(dtype=np.uint8))
+            .apply(magnify.Image(dtype=np.float32))
+        )(image)
 
     dataset = tf.data.Dataset.from_tensor_slices([path, path])
     dataset = dataset.map(lambda e: tf.image.decode_gif(tf.io.read_file(e)))
@@ -47,7 +49,7 @@ def test_image():
     dataset = dataset.batch(65536)
     image = tf.data.experimental.get_single_element(dataset)
 
-    assert np.array_equal(expected, image)
+    assert np.allclose(expected, image)
 
     # import matplotlib.pyplot as plt
     # for e in tf.unstack(image, axis=0):

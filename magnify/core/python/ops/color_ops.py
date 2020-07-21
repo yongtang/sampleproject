@@ -16,11 +16,25 @@
 
 import tensorflow as tf
 
+from magnify.core.python.ops.core_ops import _FunctionalImplementation, Input
 
-class Grayscale:
-    def __call__(self, input):
+
+class RGB2Grayscale(_FunctionalImplementation):
+    def __init__(self):
+        super().__init__()
+
+    def _annotate(self, *input):
+        # unpack input
+        (input,) = input
+        dtype = input.dtype
+        return (Input(dtype=dtype),)
+
+    def _function(self, *input):
+        # unpack input tuple
+        (input,) = input
         value = tf.image.convert_image_dtype(input, tf.float32)
         coeff = [0.2125, 0.7154, 0.0721]
         value = tf.tensordot(value, coeff, (-1, -1))
         value = tf.expand_dims(value, -1)
-        return tf.image.convert_image_dtype(value, input.dtype)
+        output = tf.image.convert_image_dtype(value, input.dtype)
+        return (output,)

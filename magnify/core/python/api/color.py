@@ -14,4 +14,4 @@
 # ==============================================================================
 """magnify.color"""
 
-from magnify.core.python.ops.color_ops import Grayscale
+from magnify.core.python.ops.color_ops import RGB2Grayscale

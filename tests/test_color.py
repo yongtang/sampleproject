@@ -17,18 +17,17 @@
 import pytest
 import skimage.color
 
+import magnify
 import numpy as np
-import magnify as mf
-
 import tensorflow as tf
 
 
 @pytest.mark.parametrize(
-    ("data", "transform", "check"),
+    ("data", "functional", "check"),
     [
         pytest.param(
             lambda: (np.random.random((5, 10, 20, 3)) * 255.0).astype(np.uint8),
-            mf.color.Grayscale(),
+            magnify.color.RGB2Grayscale(),
             lambda e: tf.expand_dims(
                 tf.cast(skimage.color.rgb2gray(e) * 255.0, tf.uint8), axis=-1
             ),
@@ -36,7 +35,7 @@ import tensorflow as tf
     ],
     ids=["rgb_to_grayscale",],
 )
-def test_color(data, transform, check):
+def test_color(data, functional, check):
     """test_color"""
 
     np.random.seed(1000)
@@ -46,27 +45,24 @@ def test_color(data, transform, check):
 
     @tf.function(autograph=False)
     def f(image):
-        image = mf.Image(dtype=np.uint8)(image)
-        image = transform(image)
-        image = mf.Image(dtype=np.uint8)(image)
-        return image
+        return (magnify.Image(dtype=np.uint8).apply(functional))(image)
 
     image = f(input)
     assert np.allclose(expected, image, atol=1.0)
 
 
 @pytest.mark.parametrize(
-    ("data", "transform", "check"),
+    ("data", "functional", "check"),
     [
         pytest.param(
             lambda: (np.random.random((5, 10, 20, 3))).astype(np.float32),
-            mf.color.Grayscale(),
+            magnify.color.RGB2Grayscale(),
             lambda e: tf.expand_dims(skimage.color.rgb2gray(e), axis=-1),
         ),
     ],
     ids=["rgb_to_grayscale",],
 )
-def test_color_float(data, transform, check):
+def test_color_float(data, functional, check):
     """test_color_float"""
 
     np.random.seed(1000)
@@ -77,10 +73,9 @@ def test_color_float(data, transform, check):
 
         @tf.function(autograph=False)
         def f(image):
-            image = mf.Image(dtype=dtype)(image)
-            image = transform(image)
-            image = mf.Image(dtype=dtype)(image)
-            return image
+            return (
+                magnify.Functional().apply(magnify.Image(dtype=dtype)).apply(functional)
+            )(image)
 
         image = f(input)
         assert np.allclose(expected, image, atol=0.01), "dtype {} failed".format(dtype)

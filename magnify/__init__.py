@@ -14,7 +14,8 @@
 # ==============================================================================
 """magnify"""
 
-from magnify.core.python.api import image
 from magnify.core.python.api import color
 
-from magnify.core.python.api.image import Image
+from magnify.core.python.api import Input
+from magnify.core.python.api import Functional
+from magnify.core.python.api import Image
