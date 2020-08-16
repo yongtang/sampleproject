@@ -1,0 +1,231 @@
+name: GitHub CI
+
+on:
+  push:
+    branches:
+      - fluyt
+  pull_request:
+    branches:
+      - fluyt
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          set -x -e
+          git log --pretty -1
+          python3 --version
+          sudo python3 -m pip install -U black pyupgrade
+          find . -name '*.py' | xargs python3 -m black
+          find . -name '*.py' | xargs python3 -m pyupgrade --py36-plus
+          echo "Check for failed lint: "
+          git status --untracked-files=no --porcelain
+          [ -z "$(git status --untracked-files=no --porcelain)" ] || exit 1
+
+  build-number:
+    name: Number
+    needs: [lint]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-20.04
+    steps:
+      - run: |
+          set -e -x
+          BUILD_NUMBER=$(date "+%Y%m%d%H%M%S")
+          echo ${BUILD_NUMBER} > BUILD_NUMBER
+      - uses: actions/upload-artifact@v1
+        with:
+          name: BUILD_NUMBER
+          path: BUILD_NUMBER
+
+  macos:
+    name: macOS
+    needs: [build-number, lint]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: BUILD_NUMBER
+      - uses: einaregilsson/build-number@v2
+      - run: echo "Build number is $BUILD_NUMBER"
+      - uses: actions/checkout@v2
+      - run: |
+          set -x -e
+          echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
+          export PATH=/usr/bin:$PATH
+          echo $PATH
+          echo "Note the following is to fix a bug in Apple's python 3.7.3"
+          sudo sed -i.bak 's/sys.modules.values()/list(sys.modules.values())/g' /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.7/lib/python3.7/linecache.py
+          python3 --version
+          python3 -m pip --version
+          python3 -m pip freeze
+          python3 -c 'import site; print(site.getsitepackages())'
+      - run: |
+          set -x -e
+          export PATH=/usr/bin:$PATH
+          python3 --version
+          sudo python3 -m pip install -U tensorflow
+      - run: |
+          set -x -e
+          export PATH=/usr/bin:$PATH
+          python3 --version
+          sudo python3 -m pip install -U pytest
+          python3 -m pytest -s -v tests/test_*.py
+      - run: |
+          set -x -e
+          export PATH=/usr/bin:$PATH
+          python3 --version
+          python3 setup.py bdist_wheel
+          python3 setup.py bdist_wheel --nightly $BUILD_NUMBER
+      - run: |
+          set -x -e
+          export PATH=/usr/bin:$PATH
+          python3 --version
+          rm -rf fluyt && ls -la dist
+          (cd dist && ls fluyt-*.whl | xargs sudo python3 -m pip install)
+      - run: |
+          set -x -e
+          export PATH=/usr/bin:$PATH
+          python3 --version
+          (cd tests && python3 -m pytest -s -v test_*.py)
+      - uses: actions/upload-artifact@v1
+        with:
+          name: macos-build
+          path: dist
+
+  ubuntu:
+    name: Ubuntu
+    needs: [build-number, lint]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: BUILD_NUMBER
+      - uses: einaregilsson/build-number@v2
+      - run: echo "Build number is $BUILD_NUMBER"
+      - uses: actions/checkout@v2
+      - run: |
+          set -x -e
+          bazel version
+          python3 --version
+          python3 -m pip --version
+          python3 -m pip freeze
+          python3 -c 'import site; print(site.getsitepackages())'
+      - run: |
+          set -x -e
+          python3 --version
+          sudo python3 -m pip install -U tensorflow
+      - run: |
+          set -x -e
+          python3 --version
+          sudo python3 -m pip install -U pytest
+          python3 -m pytest -s -v tests/test_*.py
+      - run: |
+          set -x -e
+          python3 --version
+          python3 setup.py bdist_wheel
+          python3 setup.py bdist_wheel --plat-name manylinux2010_x86_64 --nightly $BUILD_NUMBER
+      - run: |
+          set -x -e
+          python3 --version
+          rm -rf fluyt && ls -la dist
+          (cd dist && ls fluyt-*.whl | xargs sudo python3 -m pip install)
+      - run: |
+          set -x -e
+          python3 --version
+          (cd tests && python3 -m pytest -s -v test_*.py)
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ubuntu-build
+          path: dist
+
+  windows:
+    name: Windows
+    needs: [build-number, lint]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: BUILD_NUMBER
+      - uses: einaregilsson/build-number@v2
+      - run: echo "Build number is $BUILD_NUMBER"
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.8.5
+      - env:
+          PYTHON_VERSION: 3.8.5
+        shell: cmd
+        run: |
+          @echo on
+          cp /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python3
+          python3 --version
+          python3 -m pip --version
+          python3 -m pip freeze
+          python3 -c "import site; print(site.getsitepackages())"
+      - shell: bash
+        run: |
+          set -x -e
+          python3 --version
+          python3 -m pip install -U tensorflow
+      - shell: bash
+        run: |
+          set -x -e
+          python3 --version
+          python3 -m pip install -U pytest
+          python3 -m pytest -s -v tests/test_*.py
+      - shell: bash
+        run: |
+          set -x -e
+          python3 --version
+          python3 -m pip install setuptools wheel
+          python3 setup.py bdist_wheel
+          python3 setup.py bdist_wheel --nightly $BUILD_NUMBER
+      - shell: bash
+        run: |
+          set -x -e
+          python3 --version
+          rm -rf fluyt && ls -la dist
+          (cd dist && ls fluyt-*.whl | xargs python3 -m pip install)
+      - shell: bash
+        run: |
+          set -x -e
+          python3 --version
+          (cd tests && python3 -m pytest -s -v test_*.py)
+      - uses: actions/upload-artifact@v1
+        with:
+          name: windows-build
+          path: dist
+
+  release:
+    name: Release
+    if: github.event_name == 'push'
+    needs: [macos, ubuntu, windows]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: macos-build
+          path: macos-build
+      - uses: actions/download-artifact@v1
+        with:
+          name: ubuntu-build
+          path: ubuntu-build
+      - uses: actions/download-artifact@v1
+        with:
+          name: windows-build
+          path: windows-build
+      - run: |
+          set -e -x
+          mkdir -p dist
+          cp macos-build/fluyt_nightly-*.whl dist/
+          cp ubuntu-build/fluyt_nightly-*.whl dist/
+          cp windows-build/fluyt_nightly-*.whl dist/
+          ls -la dist/
+          sha256sum dist/*.whl
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.nightly }}
