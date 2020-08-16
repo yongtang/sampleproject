@@ -14,7 +14,4 @@
 # ==============================================================================
 """fluyt"""
 
-from fluyt.core.python.api import Param, Transform, MetaTransform, Layer
-
-from fluyt.core.python.api import ops
-from fluyt.core.python.api import random
+from fluyt.core.python.ops.core_ops import Param, Transform, MetaTransform, Layer

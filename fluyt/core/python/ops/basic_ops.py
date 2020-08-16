@@ -12,9 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""fluyt"""
+"""fluyt.ops"""
 
-from fluyt.core.python.api import Param, Transform, MetaTransform, Layer
+import functools
+import operator
 
-from fluyt.core.python.api import ops
-from fluyt.core.python.api import random
+import tensorflow as tf
+
+from fluyt.core.python.ops.core_ops import Transform
+
+
+@Transform
+def reshape(input, *, shape, name=None):
+    shape = [-1 if e is None else e for e in shape]
+    return tf.reshape(input, shape)
+
+
+@Transform
+def multiply(input, *, right, name=None):
+    right = right(tf.shape(input), input.dtype) if callable(right) else right
+    return tf.math.multiply(input, right)

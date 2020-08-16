@@ -12,9 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""fluyt"""
+"""fluyt.random"""
 
-from fluyt.core.python.api import Param, Transform, MetaTransform, Layer
+import tensorflow as tf
 
-from fluyt.core.python.api import ops
-from fluyt.core.python.api import random
+from fluyt.core.python.ops.core_ops import Transform
+
+
+@Transform
+def bernoulli(shape, dtype, *, p=None, seed=None, name=None):
+    p = 0.0 if p is None else p
+    v = tf.random.uniform(shape, seed=seed)
+    return tf.where(
+        tf.math.greater_equal(v, p),
+        tf.constant(1, dtype=dtype),
+        tf.constant(0, dtype=dtype),
+    )

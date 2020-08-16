@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""fluyt"""
+"""fluyt.random"""
 
-from fluyt.core.python.api import Param, Transform, MetaTransform, Layer
-
-from fluyt.core.python.api import ops
-from fluyt.core.python.api import random
+from fluyt.core.python.ops.random_ops import bernoulli
