@@ -32,3 +32,8 @@ def reshape(input, *, shape, name=None):
 def multiply(input, *, right, name=None):
     right = right(tf.shape(input), input.dtype) if callable(right) else right
     return tf.math.multiply(input, right)
+
+
+@Transform
+def convolution(input, *, ksize, strides, name=None):
+    return tf.nn.max_pool(input, ksize, strides=strides, padding="VALID")

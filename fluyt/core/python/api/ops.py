@@ -14,4 +14,4 @@
 # ==============================================================================
 """fluyt.ops"""
 
-from fluyt.core.python.ops.basic_ops import reshape, multiply
+from fluyt.core.python.ops.basic_ops import reshape, multiply, convolution
