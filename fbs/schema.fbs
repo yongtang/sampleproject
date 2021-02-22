@@ -1,0 +1,9 @@
+namespace fbs;
+
+table Record {
+  data:string;
+}
+
+rpc_service Data {
+  Record(Record):Record;
+}
